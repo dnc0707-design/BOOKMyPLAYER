@@ -325,7 +325,39 @@
     </footer>
 
     <!-- MAIN APP LOGIC -->
-    <script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- FIREBASE SETUP ---
+        let firebaseConfig;
+        try {
+            // Uses the provided environment config inside this editor
+            firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        } catch (e) {}
+
+        if (!firebaseConfig) {
+            // 🚨 IMPORTANT FOR GITHUB DEPLOYMENT 🚨
+            // When you deploy to GitHub Pages, replace this object with your actual Firebase config!
+            firebaseConfig = {
+                apiKey: "YOUR_API_KEY",
+                authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+                projectId: "YOUR_PROJECT_ID",
+                storageBucket: "YOUR_PROJECT_ID.firebasestorage.app",
+                messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+                appId: "YOUR_APP_ID"
+            };
+        }
+
+        const firebaseApp = initializeApp(firebaseConfig);
+        const auth = getAuth(firebaseApp);
+        const db = getFirestore(firebaseApp);
+        const artifactAppId = typeof __app_id !== 'undefined' ? __app_id : 'bookmyplayer-web';
+
+        // Reference to our public players database collection
+        const playersCollection = collection(db, 'artifacts', artifactAppId, 'public', 'data', 'players');
+
         // --- DATA & CONSTANTS ---
         const WB_DISTRICTS = [
             "Alipurduar", "Bankura", "Birbhum", "Cooch Behar", "Dakshin Dinajpur", 
@@ -336,9 +368,6 @@
             "Uttar Dinajpur"
         ];
 
-        // Start with an empty list of players
-        let players = [];
-
         // --- APP STATE ---
         const appState = {
             view: 'home',
@@ -346,7 +375,9 @@
             selectedPlayer: null,
             isMobileMenuOpen: false,
             photoDataUrl: null,
-            calendarDate: new Date()
+            calendarDate: new Date(),
+            players: [], // Now loaded from Firebase real-time
+            firestoreUser: null
         };
 
         // --- UTILS ---
@@ -378,7 +409,7 @@
 
         // --- CORE FUNCTIONS ---
         const app = {
-            init: () => {
+            init: async () => {
                 // Populate District Selects
                 const searchDist = document.getElementById('search-district');
                 const regDist = document.getElementById('register-district');
@@ -391,8 +422,60 @@
                 document.getElementById('photo-upload').addEventListener('change', app.handlePhotoChange);
 
                 app.renderNavbar();
-                app.filterPlayers();
                 lucide.createIcons();
+
+                // 1. Authenticate with Firebase anonymously first
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Auth Error", error);
+                }
+
+                // 2. Listen to Auth State and then fetch Firestore data
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        appState.firestoreUser = user;
+                        app.listenToPlayers();
+                    }
+                });
+            },
+
+            listenToPlayers: () => {
+                if (!appState.firestoreUser) return;
+                
+                // Real-time listener for the players collection
+                onSnapshot(playersCollection, (snapshot) => {
+                    appState.players = [];
+                    snapshot.forEach((doc) => {
+                        appState.players.push(doc.data());
+                    });
+                    
+                    // Update UI automatically when data changes
+                    app.filterPlayers();
+                    
+                    // Update Dashboard if open
+                    if (appState.currentUser) {
+                        const updatedMe = appState.players.find(p => p.id === appState.currentUser.id);
+                        if (updatedMe) appState.currentUser = updatedMe;
+                        if (appState.view === 'dashboard') app.renderDashboard();
+                    }
+                    
+                    // Update Profile View if open
+                    if (appState.view === 'profile' && appState.selectedPlayer) {
+                        const updatedPlayer = appState.players.find(p => p.id === appState.selectedPlayer.id);
+                        if (updatedPlayer) {
+                            appState.selectedPlayer = updatedPlayer;
+                            app.renderProfile();
+                        }
+                    }
+                }, (error) => {
+                    console.error("Error fetching real-time players:", error);
+                    app.showToast("Error connecting to database", "error");
+                });
             },
 
             showToast: (msg, type = 'success') => {
@@ -435,7 +518,7 @@
                 }
 
                 if (newView === 'profile' && playerId) {
-                    appState.selectedPlayer = players.find(p => p.id === playerId);
+                    appState.selectedPlayer = appState.players.find(p => p.id === playerId);
                     app.renderProfile();
                 } else if (newView === 'dashboard' && appState.currentUser) {
                     app.renderDashboard();
@@ -504,7 +587,7 @@
                 const distQ = document.getElementById('search-district').value;
                 const blockQ = document.getElementById('search-block').value.toLowerCase();
 
-                const filtered = players.filter(p => {
+                const filtered = appState.players.filter(p => {
                     const matchName = p.name.toLowerCase().includes(nameQ);
                     const matchDist = distQ === '' || p.district === distQ;
                     const matchBlock = blockQ === '' || p.block.toLowerCase().includes(blockQ);
@@ -820,29 +903,37 @@
                 const current = appState.calendarDate;
                 appState.calendarDate = new Date(current.getFullYear(), current.getMonth() + offset, 1);
                 
-                const player = players.find(p => p.id === playerId);
+                const player = appState.players.find(p => p.id === playerId);
                 if(player) {
                     app.renderCalendar(containerId, player.bookedDates, readOnly, playerId);
                 }
             },
 
-            toggleAvailability: (playerId, dateStr, containerId) => {
-                const playerIndex = players.findIndex(p => p.id === playerId);
+            toggleAvailability: async (playerId, dateStr, containerId) => {
+                if (!appState.firestoreUser) return;
+
+                const playerIndex = appState.players.findIndex(p => p.id === playerId);
                 if(playerIndex > -1) {
-                    const p = players[playerIndex];
+                    const p = appState.players[playerIndex];
                     const isBooked = p.bookedDates.includes(dateStr);
-                    
+                    let newDates = [];
+
                     if(isBooked) {
-                        p.bookedDates = p.bookedDates.filter(d => d !== dateStr);
+                        newDates = p.bookedDates.filter(d => d !== dateStr);
                     } else {
-                        p.bookedDates.push(dateStr);
+                        newDates = [...p.bookedDates, dateStr];
                     }
 
-                    if(appState.currentUser && appState.currentUser.id === playerId) {
-                        appState.currentUser.bookedDates = p.bookedDates;
+                    try {
+                        // Save directly to Firebase Cloud Database
+                        await setDoc(doc(playersCollection, playerId), { ...p, bookedDates: newDates });
+                        
+                        // Note: The UI will update automatically via the onSnapshot real-time listener!
+                        app.showToast("Availability updated");
+                    } catch (error) {
+                        console.error(error);
+                        app.showToast("Error updating database", "error");
                     }
-
-                    app.renderCalendar(containerId, p.bookedDates, false, playerId);
                 }
             },
 
@@ -869,8 +960,14 @@
                 }
             },
 
-            handleRegister: (e) => {
+            handleRegister: async (e) => {
                 e.preventDefault();
+
+                if (!appState.firestoreUser) {
+                    app.showToast("Connecting to database, please wait...", "error");
+                    return;
+                }
+
                 const fd = new FormData(e.target);
                 
                 const newPlayer = {
@@ -893,12 +990,21 @@
                     bookedDates: []
                 };
 
-                players.unshift(newPlayer);
-                appState.currentUser = newPlayer;
-                
-                e.target.reset();
-                app.showToast("Registration successful! Your default password is Pass@123");
-                app.navigateTo('dashboard');
+                try {
+                    // Save directly to Firebase Cloud Database
+                    await setDoc(doc(playersCollection, newPlayer.id), newPlayer);
+                    
+                    appState.currentUser = newPlayer;
+                    appState.photoDataUrl = null;
+                    e.target.reset();
+                    
+                    app.showToast("Registration successful! Your default password is Pass@123");
+                    app.navigateTo('dashboard');
+
+                } catch (error) {
+                    console.error("Error adding document: ", error);
+                    app.showToast("Error creating profile", "error");
+                }
             },
 
             handleLogin: (e) => {
@@ -907,7 +1013,7 @@
                 const phone = fd.get('phone');
                 const password = fd.get('password');
                 
-                const user = players.find(p => p.phone === phone && p.password === password);
+                const user = appState.players.find(p => p.phone === phone && p.password === password);
                 if (user) {
                     appState.currentUser = user;
                     e.target.reset();
@@ -918,7 +1024,7 @@
                 }
             },
 
-            handleChangePassword: (e) => {
+            handleChangePassword: async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
                 const currentPassword = fd.get('currentPassword');
@@ -929,12 +1035,19 @@
                     return;
                 }
 
-                appState.currentUser.password = newPassword;
-                const pIndex = players.findIndex(p => p.id === appState.currentUser.id);
-                if(pIndex > -1) players[pIndex].password = newPassword;
-                
-                e.target.reset();
-                app.showToast("Password updated successfully!");
+                try {
+                    const updatedUser = { ...appState.currentUser, password: newPassword };
+                    
+                    // Update in Firebase Cloud Database
+                    await setDoc(doc(playersCollection, appState.currentUser.id), updatedUser);
+                    
+                    appState.currentUser = updatedUser;
+                    e.target.reset();
+                    app.showToast("Password updated successfully!");
+                } catch (error) {
+                    console.error("Error updating password: ", error);
+                    app.showToast("Error updating password", "error");
+                }
             },
 
             logout: () => {
@@ -944,9 +1057,11 @@
             }
         };
 
+        // Make app globally available for inline HTML onclick events
+        window.app = app;
+
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
-            window.app = app;
             app.init();
         });
     </script>
