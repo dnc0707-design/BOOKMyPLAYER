@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOOKMYPLAYER - West Bengal Tennis Cricket</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom animations and utilities */
+        .animate-fade-in-up {
+            animation: fadeInUp 0.3s ease-out forwards;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden-view { display: none !important; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
+
+    <!-- NAVBAR -->
+    <nav class="bg-emerald-900 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 cursor-pointer group" onclick="app.navigateTo('home')">
+                    <div class="bg-emerald-500 p-1.5 rounded-full group-hover:scale-105 transition-transform shadow-md">
+                        <i data-lucide="trophy" class="text-white w-6 h-6"></i>
+                    </div>
+                    <div class="flex flex-col justify-center">
+                        <span class="font-bold text-xl tracking-tight leading-none">BOOKMY<span class="text-emerald-400">PLAYER</span></span>
+                        <span class="text-[0.65rem] font-black tracking-widest text-yellow-400 uppercase mt-1 leading-none">West Bengal</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Menu -->
+                <div class="hidden md:flex items-center space-x-8" id="nav-desktop">
+                    <!-- Populated by JS -->
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden flex items-center">
+                    <button onclick="app.toggleMobileMenu()" class="text-white hover:text-emerald-200" id="mobile-menu-btn">
+                        <i data-lucide="menu" class="w-7 h-7"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-emerald-800 border-t border-emerald-700">
+            <div class="px-4 pt-2 pb-4 space-y-1" id="nav-mobile">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 hidden animate-fade-in-up">
+        <div id="toast-content" class="flex items-center gap-2 px-4 py-3 rounded-lg shadow-xl text-white font-medium bg-emerald-600">
+            <i data-lucide="check-circle" class="w-5 h-5" id="toast-icon"></i>
+            <span id="toast-msg"></span>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow pb-20">
+        
+        <!-- VIEW: HOME -->
+        <div id="view-home" class="view-section">
+            <!-- Hero Section -->
+            <div class="bg-emerald-900 text-white py-16 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+                <div class="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1531415074968-036ba1b575da?q=80&w=2000&auto=format&fit=crop')] bg-cover bg-center"></div>
+                <div class="max-w-4xl mx-auto relative z-10 text-center">
+                    <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight">
+                        Book Top <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-yellow-400">Tennis Cricket</span> Players
+                    </h1>
+                    <p class="text-lg md:text-xl text-emerald-100 mb-10 max-w-2xl mx-auto">
+                        Find the perfect match-winner for your next tournament in West Bengal. Check availability and hire instantly.
+                    </p>
+
+                    <!-- Search Bar -->
+                    <div class="bg-white p-2 rounded-2xl shadow-2xl flex flex-col md:flex-row gap-2 max-w-4xl mx-auto">
+                        <div class="flex-1 relative flex items-center">
+                            <i data-lucide="search" class="absolute left-4 text-gray-400 w-5 h-5"></i>
+                            <input type="text" id="search-name" placeholder="Search player name..." class="w-full pl-12 pr-4 py-3 sm:py-4 rounded-xl text-gray-800 bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all" oninput="app.filterPlayers()">
+                        </div>
+                        <div class="w-full md:w-1/4 relative flex items-center">
+                            <i data-lucide="map-pin" class="absolute left-4 text-gray-400 w-5 h-5"></i>
+                            <select id="search-district" class="w-full pl-12 pr-4 py-3 sm:py-4 rounded-xl text-gray-800 bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none" onchange="app.filterPlayers()">
+                                <option value="">All Districts</option>
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                        <div class="w-full md:w-1/4 relative flex items-center">
+                            <i data-lucide="map-pin" class="absolute left-4 text-gray-400 w-5 h-5"></i>
+                            <input type="text" id="search-block" placeholder="Block / Muni..." class="w-full pl-12 pr-4 py-3 sm:py-4 rounded-xl text-gray-800 bg-gray-50 border-transparent focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all" oninput="app.filterPlayers()">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Available Players</h2>
+                        <p class="text-slate-500 mt-1" id="results-count">Found 0 players matching your criteria</p>
+                    </div>
+                </div>
+                <!-- Grid -->
+                <div id="players-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                    <!-- Populated by JS -->
+                </div>
+                <!-- Empty State -->
+                <div id="empty-state" class="hidden text-center py-20 bg-white rounded-3xl border border-dashed border-gray-300">
+                    <i data-lucide="user" class="mx-auto text-gray-300 w-12 h-12 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700">No players found</h3>
+                    <p class="text-gray-500 mt-2">Try adjusting your search criteria</p>
+                    <button onclick="app.clearSearch()" class="mt-4 text-emerald-600 font-medium hover:underline">Clear Search</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: PLAYER PROFILE -->
+        <div id="view-profile" class="view-section hidden-view max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <button onclick="app.navigateTo('home')" class="flex items-center gap-2 text-slate-500 hover:text-emerald-600 mb-6 font-medium transition-colors">
+                <i data-lucide="chevron-left" class="w-5 h-5"></i> Back to Search
+            </button>
+            <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+                <div class="md:flex" id="profile-content">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- VIEW: REGISTRATION FORM -->
+        <div id="view-register" class="view-section hidden-view max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="text-center mb-10">
+                <h1 class="text-4xl font-extrabold text-slate-800 tracking-tight">Join as a Player</h1>
+                <p class="text-slate-500 mt-3 text-lg">Register to get discovered by teams across West Bengal.</p>
+                <p class="mt-2 text-sm bg-emerald-50 text-emerald-700 inline-block px-4 py-2 rounded-lg border border-emerald-100">
+                    <i data-lucide="lock" class="inline w-3.5 h-3.5 mr-1 mb-0.5"></i> Your default password will be <strong>Pass@123</strong>.
+                </p>
+            </div>
+            <div class="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-slate-100">
+                <form id="register-form" onsubmit="app.handleRegister(event)" class="space-y-6">
+                    <!-- Populated by JS for district dropdowns, etc. Form HTML structure remains static mostly -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-bold text-slate-700">Full Name *</label>
+                            <input required name="name" type="text" placeholder="e.g. Sourav Ganguly" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-700">Phone Number (Calling) *</label>
+                            <input required name="phone" type="tel" placeholder="+91 xxxxx xxxxx" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-700">WhatsApp Number *</label>
+                            <input required name="whatsapp" type="tel" placeholder="+91 xxxxx xxxxx" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-bold text-slate-700">Email Address (Optional)</label>
+                            <input name="email" type="email" placeholder="your.email@example.com" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-700">District *</label>
+                            <select required name="district" id="register-district" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none">
+                                <!-- JS Populated -->
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-700">Block / Municipality *</label>
+                            <input required name="block" type="text" placeholder="e.g. Habra Municipality" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-sm font-bold text-slate-700">Playing Role *</label>
+                            <select required name="role" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none">
+                                <option value="Batsman">Batsman</option>
+                                <option value="Bowler">Bowler</option>
+                                <option value="All-Rounder">All-Rounder</option>
+                                <option value="Wicket-Keeper">Wicket-Keeper</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-700">Batting Style *</label>
+                            <select required name="battingStyle" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none">
+                                <option value="Right Handed">Right Handed</option>
+                                <option value="Left Handed">Left Handed</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-700">Bowling Style *</label>
+                            <select required name="bowlingStyle" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all appearance-none">
+                                <option value="Right Handed">Right Handed</option>
+                                <option value="Left Handed">Left Handed</option>
+                                <option value="None">None (Pure Batsman/WK)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-700">Expected Match Fee (₹) *</label>
+                            <input required name="pricePerMatch" type="text" placeholder="e.g. ₹1500" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-sm font-bold text-slate-700">Expected Per Day Fee (₹) *</label>
+                            <input required name="pricePerDay" type="text" placeholder="e.g. ₹2500" class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Photo Upload -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-slate-700">Profile Photo</label>
+                        <div class="flex items-center gap-4 p-3 rounded-xl bg-slate-50 border border-slate-200 transition-all hover:bg-white hover:border-emerald-300">
+                            <div class="w-16 h-16 rounded-full bg-slate-200 border-2 border-dashed border-slate-400 flex items-center justify-center overflow-hidden flex-shrink-0" id="photo-preview-container">
+                                <i data-lucide="camera" class="text-slate-400 w-6 h-6"></i>
+                            </div>
+                            <div class="flex-1">
+                                <input type="file" id="photo-upload" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2.5 file:px-5 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-emerald-100 file:text-emerald-700 hover:file:bg-emerald-200 transition-all cursor-pointer outline-none">
+                                <p class="text-xs text-slate-500 mt-1">Upload a clear photo. Max size: 5MB.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Video Link -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-slate-700">Highlight Video Link (YouTube / FB)</label>
+                        <input name="videoLink" type="url" placeholder="https://www.youtube.com/watch?v=..." class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                    </div>
+
+                    <!-- Bio -->
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-slate-700">About Yourself (Skills, Experience)</label>
+                        <textarea name="bio" rows="4" placeholder="Describe your playing style and past tournament experience..." class="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all"></textarea>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-100">
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-emerald-600/30 flex justify-center items-center gap-2">
+                            Create Player Profile
+                        </button>
+                        <p class="text-center text-sm text-slate-500 mt-4">
+                            Already have an account? <button type="button" onclick="app.navigateTo('login')" class="text-emerald-600 font-bold hover:underline">Log in here</button>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW: LOGIN FORM -->
+        <div id="view-login" class="view-section hidden-view max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-20">
+            <div class="bg-white rounded-3xl shadow-xl p-8 md:p-10 border border-slate-100">
+                <div class="text-center mb-8">
+                    <div class="bg-emerald-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="log-in" class="text-emerald-600 w-8 h-8"></i>
+                    </div>
+                    <h1 class="text-3xl font-extrabold text-slate-800 tracking-tight">Player Login</h1>
+                    <p class="text-slate-500 mt-2">Manage your availability & profile</p>
+                </div>
+                <form id="login-form" onsubmit="app.handleLogin(event)" class="space-y-6">
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-slate-700">Phone Number (Login ID)</label>
+                        <input required name="phone" type="tel" placeholder="+91 xxxxx xxxxx" class="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-sm font-bold text-slate-700">Password</label>
+                        <input required name="password" type="password" placeholder="••••••••" class="w-full p-4 rounded-xl bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-emerald-600/30 mt-2">
+                        Log In
+                    </button>
+                    <p class="text-center text-sm text-slate-500 mt-4">
+                        Don't have an account? <button type="button" onclick="app.navigateTo('register')" class="text-emerald-600 font-bold hover:underline">Register now</button>
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <!-- VIEW: DASHBOARD -->
+        <div id="view-dashboard" class="view-section hidden-view max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-slate-800">My Dashboard</h1>
+                    <p class="text-slate-500 mt-1">Manage your profile and availability</p>
+                </div>
+                <button onclick="app.logout()" class="text-slate-500 hover:text-red-500 font-medium transition-colors border border-slate-200 px-4 py-2 rounded-lg">
+                    Log Out
+                </button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8" id="dashboard-content">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-900 text-slate-400 py-12 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="flex justify-center items-center gap-3 mb-6 opacity-80">
+                <div class="bg-slate-800 p-2 rounded-full">
+                    <i data-lucide="trophy" class="text-slate-500 w-6 h-6"></i>
+                </div>
+                <div class="flex flex-col items-start">
+                    <span class="font-bold text-2xl tracking-tight text-white leading-none">BOOKMY<span class="text-emerald-500">PLAYER</span></span>
+                    <span class="text-[0.7rem] font-black tracking-widest text-slate-500 uppercase mt-1 leading-none">West Bengal</span>
+                </div>
+            </div>
+            <p class="mb-6 max-w-md mx-auto">Connecting local tennis cricket talent with teams across all districts of West Bengal.</p>
+            <div class="flex justify-center gap-6 text-sm">
+                <a href="#" class="hover:text-emerald-400 transition-colors">Terms of Service</a>
+                <a href="#" class="hover:text-emerald-400 transition-colors">Privacy Policy</a>
+                <a href="#" class="hover:text-emerald-400 transition-colors">Contact Support</a>
+            </div>
+            <p class="mt-8 text-xs opacity-50">&copy; 2026 BookMyPlayer.com. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- MAIN APP LOGIC -->
+    <script>
+        // --- DATA & CONSTANTS ---
+        const WB_DISTRICTS = [
+            "Alipurduar", "Bankura", "Birbhum", "Cooch Behar", "Dakshin Dinajpur", 
+            "Darjeeling", "Hooghly", "Howrah", "Jalpaiguri", "Jhargram", 
+            "Kalimpong", "Kolkata", "Malda", "Murshidabad", "Nadia", 
+            "North 24 Parganas", "Paschim Bardhaman", "Paschim Medinipur", 
+            "Purba Bardhaman", "Purba Medinipur", "Purulia", "South 24 Parganas", 
+            "Uttar Dinajpur"
+        ];
+
+        let players = [
+            {
+                id: '1', name: 'Rahul Banerjee', photo: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=200&auto=format&fit=crop',
+                district: 'Kolkata', block: 'KMC Ward 50', phone: '+91 98765 43210', whatsapp: '+91 98765 43210', email: 'rahul.b@example.com', password: 'Pass@123',
+                role: 'All-Rounder', battingStyle: 'Right Handed', bowlingStyle: 'Right Handed', pricePerMatch: '₹1500', pricePerDay: '₹2500',
+                bio: 'Aggressive opening batsman and medium pacer. 5 years of experience in local tennis tape-ball tournaments.', videoLink: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', 
+                bookedDates: ['2026-03-10', '2026-03-11', '2026-03-15']
+            },
+            {
+                id: '2', name: 'Sourav Das', photo: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=200&auto=format&fit=crop',
+                district: 'North 24 Parganas', block: 'Barasat', phone: '+91 87654 32109', whatsapp: '+91 87654 32109', email: 'sourav.das99@example.com', password: 'Pass@123',
+                role: 'Batsman', battingStyle: 'Right Handed', bowlingStyle: 'None', pricePerMatch: '₹1200', pricePerDay: '₹2000',
+                bio: 'Specialist T20 batsman. Known for hitting big sixes in the death overs.',
+                bookedDates: ['2026-03-12', '2026-03-18', '2026-03-19']
+            },
+            {
+                id: '3', name: 'Amit Ghosh', photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=200&auto=format&fit=crop',
+                district: 'Howrah', block: 'Bally', phone: '+91 76543 21098', whatsapp: '+91 76543 21098', email: 'amit.bowler@example.com', password: 'Pass@123',
+                role: 'Bowler', battingStyle: 'Right Handed', bowlingStyle: 'Right Handed', pricePerMatch: '₹1000', pricePerDay: '₹1800',
+                bio: 'Pace bowler with lethal yorkers. Very economical in powerplays.',
+                bookedDates: ['2026-03-09', '2026-03-10', '2026-03-22']
+            },
+            {
+                id: '4', name: 'Vikash Singh', photo: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=200&auto=format&fit=crop',
+                district: 'Hooghly', block: 'Chinsurah', phone: '+91 99887 76655', whatsapp: '+91 99887 76655', email: 'vikash.singh@example.com', password: 'Pass@123',
+                role: 'All-Rounder', battingStyle: 'Left Handed', bowlingStyle: 'Left Handed', pricePerMatch: '₹2000', pricePerDay: '₹3500',
+                bio: 'Match winner. Left-hand bat, slow left-arm orthodox. Captain material.',
+                bookedDates: ['2026-03-15', '2026-03-16', '2026-03-25']
+            }
+        ];
+
+        // --- APP STATE ---
+        const appState = {
+            view: 'home',
+            currentUser: null,
+            selectedPlayer: null,
+            isMobileMenuOpen: false,
+            photoDataUrl: null,
+            calendarDate: new Date()
+        };
+
+        // --- UTILS ---
+        const getTodayString = () => {
+            const today = new Date();
+            return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        };
+
+        const renderVideoHtml = (url) => {
+            if (!url) return '';
+            const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+            if (ytMatch && ytMatch[1]) {
+                const embedUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
+                return `
+                <div class="w-full rounded-2xl overflow-hidden shadow-md border border-slate-100 bg-slate-900 mb-10 border-t border-slate-100 pt-10">
+                    <h2 class="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2 px-4 pt-4">
+                        <i data-lucide="video" class="text-emerald-500 w-6 h-6"></i> Match Highlights
+                    </h2>
+                    <iframe src="${embedUrl}" class="w-full h-64 sm:h-80 md:h-96" title="Player Highlight Video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>`;
+            }
+            return `
+            <div class="mb-10 border-t border-slate-100 pt-10">
+                <a href="${url}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 text-white font-semibold bg-blue-600 hover:bg-blue-700 py-4 px-6 rounded-xl transition-all shadow-md inline-flex w-full md:w-auto">
+                    <i data-lucide="play-circle" class="w-6 h-6"></i> Watch Player Highlight Video
+                </a>
+            </div>`;
+        };
+
+        // --- CORE FUNCTIONS ---
+        const app = {
+            init: () => {
+                // Populate District Selects
+                const searchDist = document.getElementById('search-district');
+                const regDist = document.getElementById('register-district');
+                WB_DISTRICTS.forEach(d => {
+                    searchDist.innerHTML += `<option value="${d}">${d}</option>`;
+                    regDist.innerHTML += `<option value="${d}">${d}</option>`;
+                });
+
+                // Photo Upload Event
+                document.getElementById('photo-upload').addEventListener('change', app.handlePhotoChange);
+
+                app.renderNavbar();
+                app.filterPlayers();
+                lucide.createIcons();
+            },
+
+            showToast: (msg, type = 'success') => {
+                const container = document.getElementById('toast-container');
+                const content = document.getElementById('toast-content');
+                const icon = document.getElementById('toast-icon');
+                const text = document.getElementById('toast-msg');
+
+                text.innerText = msg;
+                if (type === 'success') {
+                    content.className = 'flex items-center gap-2 px-4 py-3 rounded-lg shadow-xl text-white font-medium bg-emerald-600';
+                    icon.setAttribute('data-lucide', 'check-circle');
+                } else {
+                    content.className = 'flex items-center gap-2 px-4 py-3 rounded-lg shadow-xl text-white font-medium bg-red-600';
+                    icon.setAttribute('data-lucide', 'x-circle');
+                }
+                
+                lucide.createIcons();
+                container.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    container.classList.add('hidden');
+                }, 3000);
+            },
+
+            navigateTo: (newView, playerId = null) => {
+                // Hide all views
+                document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden-view'));
+                
+                appState.view = newView;
+                document.getElementById(`view-${newView}`).classList.remove('hidden-view');
+
+                appState.isMobileMenuOpen = false;
+                document.getElementById('mobile-menu').classList.add('hidden');
+                document.getElementById('mobile-menu-btn').innerHTML = `<i data-lucide="menu" class="w-7 h-7"></i>`;
+
+                if (newView !== 'register') {
+                    appState.photoDataUrl = null;
+                    document.getElementById('photo-preview-container').innerHTML = `<i data-lucide="camera" class="text-slate-400 w-6 h-6"></i>`;
+                }
+
+                if (newView === 'profile' && playerId) {
+                    appState.selectedPlayer = players.find(p => p.id === playerId);
+                    app.renderProfile();
+                } else if (newView === 'dashboard' && appState.currentUser) {
+                    app.renderDashboard();
+                }
+
+                app.renderNavbar();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                lucide.createIcons();
+            },
+
+            toggleMobileMenu: () => {
+                appState.isMobileMenuOpen = !appState.isMobileMenuOpen;
+                const menu = document.getElementById('mobile-menu');
+                const btn = document.getElementById('mobile-menu-btn');
+                
+                if (appState.isMobileMenuOpen) {
+                    menu.classList.remove('hidden');
+                    btn.innerHTML = `<i data-lucide="x" class="w-7 h-7"></i>`;
+                } else {
+                    menu.classList.add('hidden');
+                    btn.innerHTML = `<i data-lucide="menu" class="w-7 h-7"></i>`;
+                }
+                lucide.createIcons();
+            },
+
+            renderNavbar: () => {
+                const desk = document.getElementById('nav-desktop');
+                const mob = document.getElementById('nav-mobile');
+                
+                const getDeskClass = (v) => `hover:text-emerald-300 font-medium transition-colors ${appState.view === v ? 'text-emerald-400' : ''}`;
+                
+                let deskHtml = `<button onclick="app.navigateTo('home')" class="${getDeskClass('home')}">Find Players</button>`;
+                let mobHtml = `<button onclick="app.navigateTo('home')" class="block w-full text-left px-3 py-3 text-base font-medium hover:bg-emerald-700 rounded-md">Find Players</button>`;
+
+                if (appState.currentUser) {
+                    deskHtml += `
+                        <button onclick="app.navigateTo('dashboard')" class="flex items-center gap-2 ${getDeskClass('dashboard')}">
+                            <img src="${appState.currentUser.photo}" alt="Profile" class="w-8 h-8 rounded-full border-2 border-emerald-500 object-cover" />
+                            <span>My Dashboard</span>
+                        </button>`;
+                    mobHtml += `<button onclick="app.navigateTo('dashboard')" class="block w-full text-left px-3 py-3 text-base font-medium hover:bg-emerald-700 rounded-md">My Dashboard</button>`;
+                } else {
+                    deskHtml += `
+                        <div class="flex items-center gap-4">
+                            <button onclick="app.navigateTo('login')" class="flex items-center gap-1.5 text-emerald-100 hover:text-white font-medium transition-colors">
+                                <i data-lucide="log-in" class="w-4 h-4"></i> Login
+                            </button>
+                            <button onclick="app.navigateTo('register')" class="bg-emerald-500 hover:bg-emerald-400 text-white px-5 py-2 rounded-full font-semibold transition-all shadow-lg hover:shadow-emerald-500/30">
+                                Register as Player
+                            </button>
+                        </div>`;
+                    mobHtml += `
+                        <button onclick="app.navigateTo('login')" class="block w-full text-left px-3 py-3 text-base font-medium text-emerald-100 hover:bg-emerald-700 rounded-md flex items-center gap-2">
+                            <i data-lucide="log-in" class="w-4 h-4"></i> Login as Player
+                        </button>
+                        <button onclick="app.navigateTo('register')" class="block w-full text-left px-3 py-3 text-base font-medium text-emerald-300 hover:bg-emerald-700 rounded-md">Register as Player</button>
+                    `;
+                }
+
+                desk.innerHTML = deskHtml;
+                mob.innerHTML = mobHtml;
+            },
+
+            filterPlayers: () => {
+                const nameQ = document.getElementById('search-name').value.toLowerCase();
+                const distQ = document.getElementById('search-district').value;
+                const blockQ = document.getElementById('search-block').value.toLowerCase();
+
+                const filtered = players.filter(p => {
+                    const matchName = p.name.toLowerCase().includes(nameQ);
+                    const matchDist = distQ === '' || p.district === distQ;
+                    const matchBlock = blockQ === '' || p.block.toLowerCase().includes(blockQ);
+                    return matchName && matchDist && matchBlock;
+                });
+
+                document.getElementById('results-count').innerText = `Found ${filtered.length} players matching your criteria`;
+                
+                const grid = document.getElementById('players-grid');
+                const empty = document.getElementById('empty-state');
+
+                if (filtered.length === 0) {
+                    grid.innerHTML = '';
+                    empty.classList.remove('hidden');
+                } else {
+                    empty.classList.add('hidden');
+                    grid.innerHTML = filtered.map(p => `
+                        <div onclick="app.navigateTo('profile', '${p.id}')" class="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-100 cursor-pointer group flex flex-col">
+                            <div class="relative h-56 overflow-hidden">
+                                <img src="${p.photo}" alt="${p.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                <div class="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-bold text-slate-800 shadow-sm">${p.role}</div>
+                                <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                                    <h3 class="text-xl font-bold text-white">${p.name}</h3>
+                                </div>
+                            </div>
+                            <div class="p-5 flex-1 flex flex-col">
+                                <div class="flex items-start gap-2 text-slate-600 mb-3 text-sm">
+                                    <i data-lucide="map-pin" class="mt-0.5 flex-shrink-0 text-emerald-500 w-4 h-4"></i>
+                                    <span class="leading-tight">${p.block}, <br/> <span class="font-medium text-slate-800">${p.district}</span></span>
+                                </div>
+                                <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                                    <div class="flex flex-col">
+                                        <span class="font-bold text-emerald-700 leading-tight">${p.pricePerMatch} <span class="text-xs text-slate-400 font-normal">/ match</span></span>
+                                        <span class="font-bold text-emerald-700 leading-tight">${p.pricePerDay} <span class="text-xs text-slate-400 font-normal">/ day</span></span>
+                                    </div>
+                                    <button class="bg-slate-100 hover:bg-emerald-50 text-emerald-700 px-4 py-1.5 rounded-full text-sm font-semibold transition-colors">
+                                        View Profile
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                    lucide.createIcons();
+                }
+            },
+
+            clearSearch: () => {
+                document.getElementById('search-name').value = '';
+                document.getElementById('search-district').value = '';
+                document.getElementById('search-block').value = '';
+                app.filterPlayers();
+            },
+
+            renderProfile: () => {
+                const p = appState.selectedPlayer;
+                if (!p) return;
+
+                let contactHtml = `
+                    <a href="tel:${p.phone}" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white py-3.5 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-emerald-600/30">
+                        <i data-lucide="phone" class="w-5 h-5"></i> Call to Book
+                    </a>
+                `;
+                if(p.whatsapp) {
+                    contactHtml += `
+                    <a href="https://wa.me/${p.whatsapp.replace(/\D/g, '')}" target="_blank" class="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3.5 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-green-500/30">
+                        <i data-lucide="message-circle" class="w-5 h-5"></i> Chat on WhatsApp
+                    </a>`;
+                }
+                if(p.email) {
+                    contactHtml += `
+                    <a href="mailto:${p.email}" class="w-full flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white py-3.5 rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-blue-500/30">
+                        <i data-lucide="mail" class="w-5 h-5"></i> Email Player
+                    </a>`;
+                }
+
+                document.getElementById('profile-content').innerHTML = `
+                    <!-- Sidebar -->
+                    <div class="md:w-1/3 bg-slate-50 p-8 border-r border-slate-100 flex flex-col items-center text-center">
+                        <div class="w-40 h-40 rounded-full overflow-hidden border-4 border-white shadow-lg mb-6">
+                            <img src="${p.photo}" alt="${p.name}" class="w-full h-full object-cover" />
+                        </div>
+                        <h1 class="text-3xl font-bold text-slate-800 mb-2">${p.name}</h1>
+                        <div class="flex flex-col items-center gap-2 mb-6">
+                            <span class="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-sm font-semibold">
+                                <i data-lucide="activity" class="w-4 h-4"></i> ${p.role}
+                            </span>
+                            <div class="flex gap-2 text-xs font-medium text-slate-600">
+                                <span class="bg-slate-200 px-2.5 py-1 rounded-lg">🏏 ${p.battingStyle} Bat</span>
+                                <span class="bg-slate-200 px-2.5 py-1 rounded-lg">⚾ ${p.bowlingStyle} Bowl</span>
+                            </div>
+                        </div>
+                        <div class="w-full space-y-4 text-left">
+                            <div class="flex items-start gap-3 p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+                                <i data-lucide="map-pin" class="text-emerald-500 mt-1 flex-shrink-0 w-5 h-5"></i>
+                                <div>
+                                    <p class="text-sm text-slate-500">Location</p>
+                                    <p class="font-medium text-slate-800">${p.block}</p>
+                                    <p class="text-slate-600">${p.district}, West Bengal</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+                                <i data-lucide="trophy" class="text-yellow-500 mt-1 flex-shrink-0 w-5 h-5"></i>
+                                <div class="w-full">
+                                    <p class="text-sm text-slate-500 mb-1">Match Fees</p>
+                                    <div class="flex justify-between items-center mb-1 border-b border-slate-50 pb-1">
+                                        <span class="text-sm text-slate-600">Per Match:</span>
+                                        <span class="font-bold text-slate-800">${p.pricePerMatch}</span>
+                                    </div>
+                                    <div class="flex justify-between items-center pt-1">
+                                        <span class="text-sm text-slate-600">Per Day:</span>
+                                        <span class="font-bold text-slate-800">${p.pricePerDay}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-8 w-full space-y-3">
+                            ${contactHtml}
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="md:w-2/3 p-8 lg:p-12">
+                        <div class="mb-10">
+                            <h2 class="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <i data-lucide="user" class="text-emerald-500 w-6 h-6"></i> About Player
+                            </h2>
+                            <p class="text-slate-600 leading-relaxed text-lg">${p.bio || "No biography provided by the player."}</p>
+                        </div>
+                        ${renderVideoHtml(p.videoLink)}
+                        <div class="mt-12 border-t border-slate-100 pt-10">
+                            <div class="flex items-center justify-between mb-6">
+                                <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                                    <i data-lucide="calendar" class="text-emerald-500 w-6 h-6"></i> Availability Calendar
+                                </h2>
+                            </div>
+                            <p class="text-slate-500 mb-8">Check the calendar below before calling. Red dates indicate the player is already booked for a tournament.</p>
+                            <div id="calendar-profile-container"></div>
+                        </div>
+                    </div>
+                `;
+                
+                appState.calendarDate = new Date(); // reset
+                app.renderCalendar('calendar-profile-container', p.bookedDates, true, p.id);
+            },
+
+            renderDashboard: () => {
+                const u = appState.currentUser;
+                if (!u) return;
+
+                let emailHtml = '';
+                if(u.email) {
+                    emailHtml = `
+                    <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                        <span class="text-slate-500 text-sm">Email</span>
+                        <span class="font-semibold text-slate-800 text-right truncate ml-4" title="${u.email}">${u.email}</span>
+                    </div>`;
+                }
+
+                document.getElementById('dashboard-content').innerHTML = `
+                    <!-- Summary Card -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                            <div class="bg-emerald-900 p-6 flex flex-col items-center text-center">
+                                <img src="${u.photo}" alt="Profile" class="w-32 h-32 rounded-full border-4 border-white shadow-md object-cover" />
+                                <h2 class="text-2xl font-bold text-white mt-4">${u.name}</h2>
+                                <p class="text-emerald-200">${u.role}</p>
+                                <div class="flex gap-2 text-xs font-medium text-emerald-100 mt-2">
+                                    <span class="bg-emerald-800 px-2 py-1 rounded-md">${u.battingStyle} Bat</span>
+                                    <span class="bg-emerald-800 px-2 py-1 rounded-md">${u.bowlingStyle} Bowl</span>
+                                </div>
+                            </div>
+                            <div class="p-6 space-y-4">
+                                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                                    <span class="text-slate-500 text-sm">Location</span>
+                                    <span class="font-semibold text-slate-800 text-right">${u.block},<br/>${u.district}</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                                    <span class="text-slate-500 text-sm">Phone</span>
+                                    <span class="font-semibold text-slate-800">${u.phone}</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                                    <span class="text-slate-500 text-sm">WhatsApp</span>
+                                    <span class="font-semibold text-slate-800">${u.whatsapp || u.phone}</span>
+                                </div>
+                                ${emailHtml}
+                                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                                    <span class="text-slate-500 text-sm">Fee (Per Match)</span>
+                                    <span class="font-semibold text-emerald-600">${u.pricePerMatch}</span>
+                                </div>
+                                <div class="flex justify-between items-center py-2 border-b border-slate-100">
+                                    <span class="text-slate-500 text-sm">Fee (Per Day)</span>
+                                    <span class="font-semibold text-emerald-600">${u.pricePerDay}</span>
+                                </div>
+                                <button onclick="app.navigateTo('profile', '${u.id}')" class="w-full mt-4 bg-slate-100 hover:bg-slate-200 text-slate-800 py-3 rounded-xl font-semibold transition-colors flex justify-center items-center gap-2">
+                                    <i data-lucide="user" class="w-4 h-4"></i> View Public Profile
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Security -->
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 mt-8 p-6">
+                            <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
+                                <i data-lucide="lock" class="text-emerald-500 w-5 h-5"></i> Security Settings
+                            </h3>
+                            <form onsubmit="app.handleChangePassword(event)" class="space-y-4">
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-slate-600">Current Password</label>
+                                    <input required name="currentPassword" type="password" placeholder="••••••••" class="w-full p-2.5 text-sm rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                                </div>
+                                <div class="space-y-1">
+                                    <label class="text-xs font-bold text-slate-600">New Password</label>
+                                    <input required name="newPassword" type="password" placeholder="••••••••" class="w-full p-2.5 text-sm rounded-lg bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all">
+                                </div>
+                                <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm">
+                                    Update Password
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Manager -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8">
+                            <div class="mb-8 border-b border-slate-100 pb-6">
+                                <h2 class="text-2xl font-bold text-slate-800 flex items-center gap-2 mb-2">
+                                    <i data-lucide="calendar" class="text-emerald-500 w-6 h-6"></i> Manage Availability
+                                </h2>
+                                <p class="text-slate-600 bg-emerald-50 p-4 rounded-xl border border-emerald-100 inline-block w-full">
+                                    <i data-lucide="shield" class="inline-block mr-2 text-emerald-600 w-5 h-5 align-middle"></i>
+                                    <strong>How it works:</strong> Click on any future date in the calendar to toggle your status. Dates marked in <span class="text-red-500 font-bold">Red</span> will be hidden from teams looking to book you for that day.
+                                </p>
+                            </div>
+                            <div class="flex justify-center" id="calendar-dashboard-container"></div>
+                        </div>
+                    </div>
+                `;
+                appState.calendarDate = new Date(); // reset
+                app.renderCalendar('calendar-dashboard-container', u.bookedDates, false, u.id);
+            },
+
+            // --- CALENDAR LOGIC ---
+            renderCalendar: (containerId, bookedDates, readOnly, playerId) => {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+
+                const year = appState.calendarDate.getFullYear();
+                const month = appState.calendarDate.getMonth();
+                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const firstDayOfMonth = new Date(year, month, 1).getDay();
+                const todayStr = getTodayString();
+
+                let daysHtml = '';
+                for (let i = 0; i < firstDayOfMonth; i++) {
+                    daysHtml += `<div class="h-10 w-10"></div>`;
+                }
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const isBooked = bookedDates.includes(dateStr);
+                    const isPast = dateStr < todayStr;
+                    
+                    let btnClass = "h-10 w-10 flex items-center justify-center rounded-full text-sm font-medium transition-all duration-200 ";
+                    let disabledAttr = isPast || readOnly ? "disabled" : "";
+                    
+                    if (isPast) {
+                        btnClass += "bg-gray-100 text-gray-400 cursor-not-allowed";
+                    } else if (isBooked) {
+                        btnClass += "bg-red-100 text-red-600 border border-red-200 ";
+                        btnClass += readOnly ? "cursor-default" : "cursor-pointer hover:bg-red-200";
+                    } else {
+                        btnClass += "bg-green-50 text-emerald-600 border border-green-200 ";
+                        btnClass += readOnly ? "cursor-default" : "cursor-pointer hover:bg-green-100";
+                    }
+
+                    const clickHandler = (!isPast && !readOnly) ? `onclick="app.toggleAvailability('${playerId}', '${dateStr}', '${containerId}')"` : '';
+
+                    daysHtml += `
+                        <div class="flex justify-center">
+                            <button ${disabledAttr} ${clickHandler} class="${btnClass}" title="${isBooked ? 'Booked' : 'Available'}">${d}</button>
+                        </div>
+                    `;
+                }
+
+                container.innerHTML = `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 w-full max-w-md mx-auto">
+                        <div class="flex justify-between items-center mb-6">
+                            <button onclick="app.changeCalendarMonth(-1, '${containerId}', '${playerId}', ${readOnly})" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            <h3 class="text-lg font-bold text-gray-800">${monthNames[month]} ${year}</h3>
+                            <button onclick="app.changeCalendarMonth(1, '${containerId}', '${playerId}', ${readOnly})" class="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-600">
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-7 gap-2 mb-2 text-center">
+                            ${['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(day => `<div class="text-xs font-semibold text-gray-400 uppercase tracking-wider">${day}</div>`).join('')}
+                        </div>
+                        <div class="grid grid-cols-7 gap-y-3 gap-x-2">
+                            ${daysHtml}
+                        </div>
+                        <div class="mt-6 flex justify-center gap-6 text-sm border-t pt-4">
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-green-400"></div><span class="text-gray-600">Available</span></div>
+                            <div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-red-400"></div><span class="text-gray-600">Booked</span></div>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+            },
+
+            changeCalendarMonth: (offset, containerId, playerId, readOnly) => {
+                const current = appState.calendarDate;
+                appState.calendarDate = new Date(current.getFullYear(), current.getMonth() + offset, 1);
+                
+                const player = players.find(p => p.id === playerId);
+                if(player) {
+                    app.renderCalendar(containerId, player.bookedDates, readOnly, playerId);
+                }
+            },
+
+            toggleAvailability: (playerId, dateStr, containerId) => {
+                const playerIndex = players.findIndex(p => p.id === playerId);
+                if(playerIndex > -1) {
+                    const p = players[playerIndex];
+                    const isBooked = p.bookedDates.includes(dateStr);
+                    
+                    if(isBooked) {
+                        p.bookedDates = p.bookedDates.filter(d => d !== dateStr);
+                    } else {
+                        p.bookedDates.push(dateStr);
+                    }
+
+                    if(appState.currentUser && appState.currentUser.id === playerId) {
+                        appState.currentUser.bookedDates = p.bookedDates;
+                    }
+
+                    app.renderCalendar(containerId, p.bookedDates, false, playerId);
+                }
+            },
+
+            // --- FORMS ---
+            handlePhotoChange: (e) => {
+                const file = e.target.files[0];
+                const previewContainer = document.getElementById('photo-preview-container');
+                if (file) {
+                    if (file.size > 5 * 1024 * 1024) { 
+                        app.showToast("Image size should be less than 5MB", "error");
+                        e.target.value = '';
+                        return;
+                    }
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        appState.photoDataUrl = reader.result;
+                        previewContainer.innerHTML = `<img src="${reader.result}" alt="Preview" class="w-full h-full object-cover" />`;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    appState.photoDataUrl = null;
+                    previewContainer.innerHTML = `<i data-lucide="camera" class="text-slate-400 w-6 h-6"></i>`;
+                    lucide.createIcons();
+                }
+            },
+
+            handleRegister: (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                
+                const newPlayer = {
+                    id: Date.now().toString(),
+                    name: fd.get('name'),
+                    photo: appState.photoDataUrl || 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?q=80&w=200&auto=format&fit=crop', 
+                    district: fd.get('district'),
+                    block: fd.get('block'),
+                    phone: fd.get('phone'),
+                    whatsapp: fd.get('whatsapp'),
+                    email: fd.get('email'),
+                    password: 'Pass@123',
+                    role: fd.get('role'),
+                    battingStyle: fd.get('battingStyle'),
+                    bowlingStyle: fd.get('bowlingStyle'),
+                    pricePerMatch: fd.get('pricePerMatch') || 'Negotiable',
+                    pricePerDay: fd.get('pricePerDay') || 'Negotiable',
+                    bio: fd.get('bio'),
+                    videoLink: fd.get('videoLink'),
+                    bookedDates: []
+                };
+
+                players.unshift(newPlayer);
+                appState.currentUser = newPlayer;
+                
+                e.target.reset();
+                app.showToast("Registration successful! Your default password is Pass@123");
+                app.navigateTo('dashboard');
+            },
+
+            handleLogin: (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const phone = fd.get('phone');
+                const password = fd.get('password');
+                
+                const user = players.find(p => p.phone === phone && p.password === password);
+                if (user) {
+                    appState.currentUser = user;
+                    e.target.reset();
+                    app.showToast("Logged in successfully!");
+                    app.navigateTo('dashboard');
+                } else {
+                    app.showToast("Invalid mobile number or password", "error");
+                }
+            },
+
+            handleChangePassword: (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const currentPassword = fd.get('currentPassword');
+                const newPassword = fd.get('newPassword');
+
+                if (currentPassword !== appState.currentUser.password) {
+                    app.showToast("Current password is incorrect", "error");
+                    return;
+                }
+
+                appState.currentUser.password = newPassword;
+                const pIndex = players.findIndex(p => p.id === appState.currentUser.id);
+                if(pIndex > -1) players[pIndex].password = newPassword;
+                
+                e.target.reset();
+                app.showToast("Password updated successfully!");
+            },
+
+            logout: () => {
+                appState.currentUser = null;
+                app.showToast("Logged out successfully");
+                app.navigateTo('home');
+            }
+        };
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            window.app = app;
+            app.init();
+        });
+    </script>
+</body>
+</html>
