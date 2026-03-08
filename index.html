@@ -428,6 +428,8 @@
                     }
                 } catch (error) {
                     console.error("Auth Error", error);
+                    // Explicitly tell the user what to fix in Firebase
+                    app.showToast("Firebase Error: Please enable 'Anonymous Sign-in' in your Firebase console.", "error");
                 }
 
                 // 2. Listen to Auth State and then fetch Firestore data
@@ -469,7 +471,7 @@
                     }
                 }, (error) => {
                     console.error("Error fetching real-time players:", error);
-                    app.showToast("Error connecting to database", "error");
+                    app.showToast("Database Permission Error. Check Firebase Rules.", "error");
                 });
             },
 
@@ -906,8 +908,6 @@
             },
 
             toggleAvailability: async (playerId, dateStr, containerId) => {
-                if (!appState.firestoreUser) return;
-
                 const playerIndex = appState.players.findIndex(p => p.id === playerId);
                 if(playerIndex > -1) {
                     const p = appState.players[playerIndex];
@@ -926,7 +926,7 @@
                         app.showToast("Availability updated");
                     } catch (error) {
                         console.error(error);
-                        app.showToast("Error updating database", "error");
+                        app.showToast("Database Error: Check Firebase Rules", "error");
                     }
                 }
             },
@@ -957,11 +957,6 @@
             handleRegister: async (e) => {
                 e.preventDefault();
 
-                if (!appState.firestoreUser) {
-                    app.showToast("Connecting to database, please wait...", "error");
-                    return;
-                }
-
                 const fd = new FormData(e.target);
                 
                 const newPlayer = {
@@ -985,7 +980,8 @@
                 };
 
                 try {
-                    // Save directly to Firebase Cloud Database
+                    // Try to save directly to Firebase Cloud Database. 
+                    // This will fail with a real error message if settings aren't correct.
                     await setDoc(doc(playersCollection, newPlayer.id), newPlayer);
                     
                     appState.currentUser = newPlayer;
@@ -996,7 +992,7 @@
                     app.navigateTo('dashboard');
                 } catch (error) {
                     console.error("Error adding document: ", error);
-                    app.showToast("Error creating profile", "error");
+                    app.showToast("Database error: Missing Firebase Permissions. Check Firebase rules.", "error");
                 }
             },
 
@@ -1039,7 +1035,7 @@
                     app.showToast("Password updated successfully!");
                 } catch (error) {
                     console.error("Error updating password: ", error);
-                    app.showToast("Error updating password", "error");
+                    app.showToast("Database Error: Check Firebase Rules", "error");
                 }
             },
 
